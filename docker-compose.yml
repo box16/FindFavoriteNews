@@ -31,5 +31,16 @@ services:
     ports:
       - "6379:6379"
 
+  front:
+    build: ./front
+    container_name: web-frontend
+    depends_on:
+      - api
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./front:/app            # 開発中はコードをマウントして即反映
+      - /app/node_modules          # node_modules はコンテナ側を優先
+
 volumes:
   db_data:
