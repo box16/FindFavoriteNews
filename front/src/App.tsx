@@ -2,7 +2,7 @@ import './App.css'
 import { useEffect, useState } from "react"
 
 export default function App() {
-  const [health, setHealth] = useState(null)
+  const [health, setHealth] = useState("null")
 
   useEffect(() => {
     fetch("/api/health")
