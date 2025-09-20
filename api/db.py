@@ -4,7 +4,7 @@ from typing import Iterator
 
 import psycopg
 
-from .config import get_database_url
+from config import get_database_url
 
 
 @contextmanager

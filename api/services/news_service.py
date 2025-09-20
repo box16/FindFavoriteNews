@@ -1,9 +1,9 @@
 """Business logic for aggregating news items."""
 from typing import List
 
-from ..clients.rss_client import RSSFetchError, fetch_feed_entries
-from ..repositories.sites_repository import fetch_primary_site
-from ..schemas import NewsItem
+from clients.rss_client import RSSFetchError, fetch_feed_entries
+from repositories.sites_repository import fetch_primary_site
+from schemas import NewsItem
 
 
 class NewsServiceError(RuntimeError):

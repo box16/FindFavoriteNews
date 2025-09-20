@@ -1,8 +1,8 @@
 """Queries related to news sites."""
 from typing import Optional
 
-from ..db import get_connection
-from ..schemas import Site
+from db import get_connection
+from schemas import Site
 
 
 _SITE_QUERY = "select id, name, feed_url from sites order by id asc limit 1"
