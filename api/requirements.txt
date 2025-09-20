@@ -1,4 +1,8 @@
 fastapi
 uvicorn[standard]
-psycopg2-binary
+psycopg[binary]
 redis
+httpx
+feedparser
+python-dateutil
+typing_extensions
