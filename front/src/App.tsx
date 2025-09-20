@@ -1,5 +1,5 @@
-import './App.css'
-import { useEffect, useState } from "react"
+import "./App.css";
+import { useEffect, useState } from "react";
 
 type NewsItem = {
   title: string;
@@ -13,34 +13,43 @@ export default function App() {
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
-    (async () => {
+    const fetchNews = async () => {
       try {
-        const r = await fetch("/api/news"); // FastAPI
-        if (!r.ok) throw new Error(`API error: ${r.status}`);
-        const data = await r.json();
+        const response = await fetch("/api/news"); // FastAPI
+        if (!response.ok) throw new Error(`API error: ${response.status}`);
+        const data: NewsItem[] = await response.json();
         setItems(data);
-      } catch (e:any) {
-        setError(e.message ?? "failed");
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "failed";
+        setError(message);
       }
-    })();
+    };
+
+    fetchNews();
   }, []);
 
-  if (error) return <div>エラー: {error}</div>;
-  if (!items.length) return <div>読み込み中...</div>;
+  if (error) return <div className="app-status">エラー: {error}</div>;
+  if (!items.length) return <div className="app-status">読み込み中...</div>;
 
   return (
-    <div style={{maxWidth: 720, margin: "2rem auto", fontFamily: "system-ui"}}>
-      <h1>最新ニュース（上位5件）</h1>
-      <ul style={{listStyle: "none", padding: 0}}>
-        {items.map((it, i) => (
-          <li key={i} style={{border:"1px solid #ddd", borderRadius:8, padding:16, marginBottom:12}}>
-            <a href={it.link} target="_blank" rel="noreferrer" style={{fontSize:18, fontWeight:600, textDecoration:"none"}}>
-              {it.title}
+    <div className="app">
+      <h1 className="app__title">最新ニュース</h1>
+      <ul className="news-list">
+        {items.map((item, index) => (
+          <li key={index} className="news-list__item">
+            <a
+              href={item.link}
+              target="_blank"
+              rel="noreferrer"
+              className="news-list__link"
+            >
+              {item.title}
             </a>
-            <div style={{color:"#666", fontSize:12, marginTop:4}}>
-              {it.source}
-            </div>
-            <p style={{marginTop:8}} dangerouslySetInnerHTML={{__html: it.summary}} />
+            <div className="news-list__source">{item.source}</div>
+            <p
+              className="news-list__summary"
+              dangerouslySetInnerHTML={{ __html: item.summary }}
+            />
           </li>
         ))}
       </ul>

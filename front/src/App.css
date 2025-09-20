@@ -1,0 +1,62 @@
+.app {
+  max-width: 720px;
+  margin: 2rem auto;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #1f2933;
+}
+
+.app__title {
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.app-status {
+  text-align: center;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  margin-top: 4rem;
+  font-size: 1.125rem;
+  color: #1f2933;
+}
+
+.news-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.news-list__item {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  background-color: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.news-list__link {
+  display: inline-block;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: inherit;
+  text-decoration: none;
+}
+
+.news-list__link:hover,
+.news-list__link:focus {
+  text-decoration: underline;
+}
+
+.news-list__source {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.news-list__summary {
+  margin-top: 0.5rem;
+  line-height: 1.5;
+  color: #374151;
+}
