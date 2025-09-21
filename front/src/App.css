@@ -1,4 +1,4 @@
-.app {
+﻿.app {
   max-width: 460px;
   margin: 2rem auto;
   padding: 0 1rem;
@@ -46,6 +46,26 @@
   flex-direction: column;
   transform-origin: center top;
   transition: transform 0.25s ease, opacity 0.25s ease, box-shadow 0.25s ease;
+}
+
+.news-card--depth-0 {
+  transform: translateY(0) scale(1);
+  z-index: 4;
+}
+
+.news-card--depth-1 {
+  transform: translateY(14px) scale(0.96);
+  z-index: 3;
+}
+
+.news-card--depth-2 {
+  transform: translateY(28px) scale(0.92);
+  z-index: 2;
+}
+
+.news-card--depth-3 {
+  transform: translateY(42px) scale(0.88);
+  z-index: 1;
 }
 
 .news-card--top {

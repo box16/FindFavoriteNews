@@ -1,4 +1,4 @@
-import "./App.css";
+﻿import "./App.css";
 import { useEffect, useState } from "react";
 
 type NewsItem = {
@@ -9,6 +9,37 @@ type NewsItem = {
 };
 
 const MAX_VISIBLE_STACK = 4;
+const MAX_STACK_DEPTH = MAX_VISIBLE_STACK - 1;
+
+const classNames = (...names: Array<string | false | undefined>) =>
+  names.filter((name): name is string => Boolean(name)).join(" ");
+
+type NewsCardProps = {
+  item: NewsItem;
+  stackIndex: number;
+};
+
+function NewsCard({ item, stackIndex }: NewsCardProps) {
+  const depth = Math.min(stackIndex, MAX_STACK_DEPTH);
+  const cardClassName = classNames(
+    "news-card",
+    `news-card--depth-${depth}`,
+    stackIndex === 0 && "news-card--top"
+  );
+
+  return (
+    <article className={cardClassName}>
+      <a href={item.link} target="_blank" rel="noreferrer" className="news-card__title">
+        {item.title}
+      </a>
+      <div className="news-card__source">{item.source}</div>
+      <p
+        className="news-card__summary"
+        dangerouslySetInnerHTML={{ __html: item.summary }}
+      />
+    </article>
+  );
+}
 
 export default function App() {
   const [items, setItems] = useState<NewsItem[]>([]);
@@ -52,37 +83,13 @@ export default function App() {
       {remainingItems.length ? (
         <>
           <div className="news-stack">
-            {visibleStack.map((item, stackIndex) => {
-              const depth = Math.min(stackIndex, MAX_VISIBLE_STACK - 1);
-              const translateY = depth * 14;
-              const scale = 1 - depth * 0.04;
-              const isTop = stackIndex === 0;
-
-              return (
-                <article
-                  key={`${item.link}-${currentIndex + stackIndex}`}
-                  className={`news-card${isTop ? " news-card--top" : ""}`}
-                  style={{
-                    zIndex: visibleStack.length - stackIndex,
-                    transform: `translateY(${translateY}px) scale(${scale})`,
-                  }}
-                >
-                  <a
-                    href={item.link}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="news-card__title"
-                  >
-                    {item.title}
-                  </a>
-                  <div className="news-card__source">{item.source}</div>
-                  <p
-                    className="news-card__summary"
-                    dangerouslySetInnerHTML={{ __html: item.summary }}
-                  />
-                </article>
-              );
-            })}
+            {visibleStack.map((item, stackIndex) => (
+              <NewsCard
+                key={`${item.link}-${currentIndex + stackIndex}`}
+                item={item}
+                stackIndex={stackIndex}
+              />
+            ))}
           </div>
 
           <div className="card-actions">
