@@ -1,80 +1,47 @@
 ﻿import "./App.css";
 import { useEffect, useState } from "react";
-
-type NewsItem = {
-  title: string;
-  link: string;
-  summary: string;
-  source: string;
-};
+import { NewsCard } from "./components/NewsCard";
+import { SanitizedHtml } from "./components/SanitizedHtml";
+import { useNewsFeed } from "./hooks/useNewsFeed";
 
 const MAX_VISIBLE_STACK = 4;
 const MAX_STACK_DEPTH = MAX_VISIBLE_STACK - 1;
 
-const classNames = (...names: Array<string | false | undefined>) =>
-  names.filter((name): name is string => Boolean(name)).join(" ");
-
-type NewsCardProps = {
-  item: NewsItem;
-  stackIndex: number;
-};
-
-function NewsCard({ item, stackIndex }: NewsCardProps) {
-  const depth = Math.min(stackIndex, MAX_STACK_DEPTH);
-  const cardClassName = classNames(
-    "news-card",
-    `news-card--depth-${depth}`,
-    stackIndex === 0 && "news-card--top"
-  );
-
-  return (
-    <article className={cardClassName}>
-      <a href={item.link} target="_blank" rel="noreferrer" className="news-card__title">
-        {item.title}
-      </a>
-      <div className="news-card__source">{item.source}</div>
-      <p
-        className="news-card__summary"
-        dangerouslySetInnerHTML={{ __html: item.summary }}
-      />
-    </article>
-  );
-}
+// It allows the type to capture that the values are fixed string literals 'Like' | 'nop'.
+const reactionLabels = {
+  like: "Like",
+  skip: "nop",
+} as const;
+type Reaction = keyof typeof reactionLabels;
 
 export default function App() {
-  const [items, setItems] = useState<NewsItem[]>([]);
-  const [error, setError] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(true);
+  const { items, error, isLoading } = useNewsFeed();
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [lastReaction, setLastReaction] = useState<{
+    title: string;
+    reaction: Reaction;
+  } | null>(null);
 
   useEffect(() => {
-    const fetchNews = async () => {
-      try {
-        const response = await fetch("/api/news"); // FastAPI
-        if (!response.ok) throw new Error(`API error: ${response.status}`);
-        const data: NewsItem[] = await response.json();
-        setItems(data);
-        setCurrentIndex(0);
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : "failed";
-        setError(message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchNews();
-  }, []);
-
-  const handleRate = () => {
-    setCurrentIndex((prevIndex) => Math.min(prevIndex + 1, items.length));
-  };
+    setCurrentIndex(0);
+    setLastReaction(null);
+  }, [items]);
 
   if (error) return <div className="app-status">エラー: {error}</div>;
   if (isLoading) return <div className="app-status">読み込み中...</div>;
 
   const remainingItems = items.slice(currentIndex);
   const visibleStack = remainingItems.slice(0, MAX_VISIBLE_STACK);
+
+  const handleRate = (reaction: Reaction) => {
+    const ratedItem = items[currentIndex];
+
+    if (ratedItem) {
+      setLastReaction({ title: ratedItem.title, reaction });
+    }
+
+    setCurrentIndex((prevIndex) => Math.min(prevIndex + 1, items.length));
+  };
 
   return (
     <div className="app">
@@ -86,9 +53,24 @@ export default function App() {
             {visibleStack.map((item, stackIndex) => (
               <NewsCard
                 key={`${item.link}-${currentIndex + stackIndex}`}
-                item={item}
-                stackIndex={stackIndex}
-              />
+                depth={Math.min(stackIndex, MAX_STACK_DEPTH)}
+                isTop={stackIndex === 0}
+              >
+                <a
+                  href={item.link}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="news-card__title"
+                >
+                  {item.title}
+                </a>
+                <div className="news-card__source">{item.source}</div>
+                <SanitizedHtml
+                  html={item.summary}
+                  className="news-card__summary"
+                  as="p"
+                />
+              </NewsCard>
             ))}
           </div>
 
@@ -96,18 +78,24 @@ export default function App() {
             <button
               type="button"
               className="card-button card-button--like"
-              onClick={handleRate}
+              onClick={() => handleRate("like")}
             >
               Like
             </button>
             <button
               type="button"
               className="card-button card-button--nop"
-              onClick={handleRate}
+              onClick={() => handleRate("skip")}
             >
               nop
             </button>
           </div>
+
+          {lastReaction ? (
+            <div className="card-actions__status" aria-live="polite">
+              {lastReaction.title} を {reactionLabels[lastReaction.reaction]} しました
+            </div>
+          ) : null}
         </>
       ) : (
         <div className="app-status app-status--inline">
