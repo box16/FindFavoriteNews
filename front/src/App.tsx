@@ -12,6 +12,10 @@ const reactionLabels = {
   like: "Like",
   skip: "nop",
 } as const;
+const reactionValues = {
+  like: 1,
+  skip: -1,
+} as const;
 type Reaction = keyof typeof reactionLabels;
 
 export default function App() {
@@ -21,10 +25,13 @@ export default function App() {
     title: string;
     reaction: Reaction;
   } | null>(null);
+  const [reactionError, setReactionError] = useState("");
+  const [isSubmittingReaction, setIsSubmittingReaction] = useState(false);
 
   useEffect(() => {
     setCurrentIndex(0);
     setLastReaction(null);
+    setReactionError("");
   }, [items]);
 
   if (error) return <div className="app-status">エラー: {error}</div>;
@@ -33,14 +40,32 @@ export default function App() {
   const remainingItems = items.slice(currentIndex);
   const visibleStack = remainingItems.slice(0, MAX_VISIBLE_STACK);
 
-  const handleRate = (reaction: Reaction) => {
+  const handleRate = async (reaction: Reaction) => {
     const ratedItem = items[currentIndex];
+    if (!ratedItem || isSubmittingReaction) return;
 
-    if (ratedItem) {
+    setReactionError("");
+    setIsSubmittingReaction(true);
+
+    try {
+      const response = await fetch(`/api/articles/${ratedItem.id}/reaction`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ value: reactionValues[reaction] }),
+      });
+
+      if (!response.ok) throw new Error(`API error: ${response.status}`);
+
       setLastReaction({ title: ratedItem.title, reaction });
+      setCurrentIndex((prevIndex) => Math.min(prevIndex + 1, items.length));
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "failed";
+      setReactionError(message);
+    } finally {
+      setIsSubmittingReaction(false);
     }
-
-    setCurrentIndex((prevIndex) => Math.min(prevIndex + 1, items.length));
   };
 
   return (
@@ -52,7 +77,7 @@ export default function App() {
           <div className="news-stack">
             {visibleStack.map((item, stackIndex) => (
               <NewsCard
-                key={`${item.link}-${currentIndex + stackIndex}`}
+                key={item.id}
                 depth={Math.min(stackIndex, MAX_STACK_DEPTH)}
                 isTop={stackIndex === 0}
               >
@@ -79,6 +104,7 @@ export default function App() {
               type="button"
               className="card-button card-button--like"
               onClick={() => handleRate("like")}
+              disabled={isSubmittingReaction}
             >
               Like
             </button>
@@ -86,10 +112,17 @@ export default function App() {
               type="button"
               className="card-button card-button--nop"
               onClick={() => handleRate("skip")}
+              disabled={isSubmittingReaction}
             >
               nop
             </button>
           </div>
+
+          {reactionError ? (
+            <div className="card-actions__status card-actions__status--error" role="alert">
+              リアクションの送信に失敗しました: {reactionError}
+            </div>
+          ) : null}
 
           {lastReaction ? (
             <div className="card-actions__status" aria-live="polite">
@@ -99,7 +132,7 @@ export default function App() {
         </>
       ) : (
         <div className="app-status app-status--inline">
-          すべてのニュースを評価しました
+          すべてのニュースをチェックしました
         </div>
       )}
     </div>

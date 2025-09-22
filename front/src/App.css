@@ -173,3 +173,7 @@
     min-height: 28rem;
   }
 }
+
+.card-actions__status--error {
+  color: #b91c1c;
+}
