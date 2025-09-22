@@ -4,6 +4,12 @@ from __future__ import annotations
 from urllib.parse import parse_qsl, urlparse, urlunparse, urlencode
 
 
+_DEFAULT_PORTS = {
+    "http": 80,
+    "https": 443,
+}
+
+
 def normalize_article_url(raw_url: str) -> str:
     """Return a canonical representation of an article URL for de-duplication."""
     if not raw_url:
@@ -13,13 +19,15 @@ def normalize_article_url(raw_url: str) -> str:
     if not parsed.scheme or not parsed.netloc:
         raise ValueError("URL must include a scheme and host")
 
+    scheme = parsed.scheme.lower()
     hostname = (parsed.hostname or "").lower()
     if hostname.startswith("www."):
         hostname = hostname[4:]
 
-    # Strip default port information after consolidating to https.
+    # Strip default port information based on the original scheme.
     port = parsed.port
-    if port in {80, 443, None}:
+    default_port = _DEFAULT_PORTS.get(scheme)
+    if port is None or port == default_port:
         port_segment = ""
     else:
         port_segment = f":{port}"
@@ -32,7 +40,6 @@ def normalize_article_url(raw_url: str) -> str:
             userinfo += f":{parsed.password}"
         userinfo += "@"
 
-    # Normalise the path: collapse multiple trailing slashes while keeping the root slash.
     path = parsed.path or "/"
     if path != "/":
         path = path.rstrip("/")
@@ -49,5 +56,5 @@ def normalize_article_url(raw_url: str) -> str:
     query = urlencode(query_items, doseq=True)
 
     netloc = f"{userinfo}{hostname}{port_segment}" if hostname else parsed.netloc
-    normalized = urlunparse(("https", netloc, path, "", query, ""))
+    normalized = urlunparse((scheme, netloc, path, "", query, ""))
     return normalized

@@ -1,23 +1,15 @@
 ﻿import "./App.css";
 import { useEffect, useMemo, useState } from "react";
+
+import { REACTIONS, reactionByKey, reactionLabelMap, type ReactionKey } from "./constants/reactions";
 import { NewsCard } from "./components/NewsCard";
 import { SanitizedHtml } from "./components/SanitizedHtml";
+import { useArticleReaction } from "./hooks/useArticleReaction";
 import { useNewsFeed } from "./hooks/useNewsFeed";
 
 const MAX_VISIBLE_STACK = 4;
 const MAX_STACK_DEPTH = MAX_VISIBLE_STACK - 1;
 const MAX_FEED_ITEMS = 30;
-
-// It allows the type to capture that the values are fixed string literals 'Like' | 'nop'.
-const reactionLabels = {
-  like: "Like",
-  skip: "nop",
-} as const;
-const reactionValues = {
-  like: 1,
-  skip: -1,
-} as const;
-type Reaction = keyof typeof reactionLabels;
 
 export default function App() {
   const { items, error, isLoading } = useNewsFeed();
@@ -25,15 +17,14 @@ export default function App() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [lastReaction, setLastReaction] = useState<{
     title: string;
-    reaction: Reaction;
+    reaction: ReactionKey;
   } | null>(null);
-  const [reactionError, setReactionError] = useState("");
-  const [isSubmittingReaction, setIsSubmittingReaction] = useState(false);
+
+  const { submitReaction, isSubmitting, error: reactionError } = useArticleReaction();
 
   useEffect(() => {
     setCurrentIndex(0);
     setLastReaction(null);
-    setReactionError("");
   }, [cappedItems]);
 
   if (error) return <div className="app-status">エラー: {error}</div>;
@@ -42,32 +33,16 @@ export default function App() {
   const remainingItems = cappedItems.slice(currentIndex);
   const visibleStack = remainingItems.slice(0, MAX_VISIBLE_STACK);
 
-  const handleRate = async (reaction: Reaction) => {
+  const handleRate = async (reactionKey: ReactionKey) => {
     const ratedItem = cappedItems[currentIndex];
-    if (!ratedItem || isSubmittingReaction) return;
+    if (!ratedItem || isSubmitting) return;
 
-    setReactionError("");
-    setIsSubmittingReaction(true);
+    const reaction = reactionByKey[reactionKey];
+    const succeeded = await submitReaction(ratedItem.id, reaction.value);
+    if (!succeeded) return;
 
-    try {
-      const response = await fetch(`/api/articles/${ratedItem.id}/reaction`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ value: reactionValues[reaction] }),
-      });
-
-      if (!response.ok) throw new Error(`API error: ${response.status}`);
-
-      setLastReaction({ title: ratedItem.title, reaction });
-      setCurrentIndex((prevIndex) => Math.min(prevIndex + 1, cappedItems.length));
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "failed";
-      setReactionError(message);
-    } finally {
-      setIsSubmittingReaction(false);
-    }
+    setLastReaction({ title: ratedItem.title, reaction: reactionKey });
+    setCurrentIndex((prevIndex) => Math.min(prevIndex + 1, cappedItems.length));
   };
 
   return (
@@ -98,22 +73,17 @@ export default function App() {
           </div>
 
           <div className="card-actions">
-            <button
-              type="button"
-              className="card-button card-button--like"
-              onClick={() => handleRate("like")}
-              disabled={isSubmittingReaction}
-            >
-              Like
-            </button>
-            <button
-              type="button"
-              className="card-button card-button--nop"
-              onClick={() => handleRate("skip")}
-              disabled={isSubmittingReaction}
-            >
-              nop
-            </button>
+            {REACTIONS.map((reaction) => (
+              <button
+                key={reaction.key}
+                type="button"
+                className={`card-button card-button--${reaction.buttonModifier}`}
+                onClick={() => handleRate(reaction.key)}
+                disabled={isSubmitting}
+              >
+                {reaction.label}
+              </button>
+            ))}
           </div>
 
           {reactionError ? (
@@ -124,7 +94,7 @@ export default function App() {
 
           {lastReaction ? (
             <div className="card-actions__status" aria-live="polite">
-              {lastReaction.title} を {reactionLabels[lastReaction.reaction]} しました
+              {lastReaction.title} を {reactionLabelMap[lastReaction.reaction]} しました
             </div>
           ) : null}
         </>
