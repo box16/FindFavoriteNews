@@ -1,22 +1,19 @@
-"""Queries related to news sites."""
-from typing import Optional
+﻿"""Queries related to news sites."""
+from __future__ import annotations
+
+from typing import List
 
 from db import get_connection
 from schemas import Site
 
+_SITES_QUERY = "select id, name, feed_url from sites order by random() limit %s"
 
-_SITE_QUERY = "select id, name, feed_url from sites order by id asc limit 1"
 
-
-def fetch_primary_site() -> Optional[Site]:
-    """Return the primary configured site, if any."""
+def fetch_random_sites(limit: int) -> List[Site]:
+    """Return up to `limit` randomly sampled sites."""
     with get_connection() as connection:
         with connection.cursor() as cursor:
-            cursor.execute(_SITE_QUERY)
-            row = cursor.fetchone()
+            cursor.execute(_SITES_QUERY, (limit,))
+            rows = cursor.fetchall()
 
-    if row is None:
-        return None
-
-    site_id, name, feed_url = row
-    return Site(id=site_id, name=name, feed_url=feed_url)
+    return [Site(id=row[0], name=row[1], feed_url=row[2]) for row in rows]

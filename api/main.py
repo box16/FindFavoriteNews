@@ -24,7 +24,7 @@ class ReactionPayload(BaseModel):
 @app.get("/news", response_model=List[NewsItem])
 def get_news():
     try:
-        return get_latest_news(limit=5)
+        return get_latest_news()
     except SiteNotConfiguredError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except FeedUnavailableError as exc:

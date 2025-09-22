@@ -1,11 +1,12 @@
 ﻿import "./App.css";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { NewsCard } from "./components/NewsCard";
 import { SanitizedHtml } from "./components/SanitizedHtml";
 import { useNewsFeed } from "./hooks/useNewsFeed";
 
 const MAX_VISIBLE_STACK = 4;
 const MAX_STACK_DEPTH = MAX_VISIBLE_STACK - 1;
+const MAX_FEED_ITEMS = 30;
 
 // It allows the type to capture that the values are fixed string literals 'Like' | 'nop'.
 const reactionLabels = {
@@ -20,6 +21,7 @@ type Reaction = keyof typeof reactionLabels;
 
 export default function App() {
   const { items, error, isLoading } = useNewsFeed();
+  const cappedItems = useMemo(() => items.slice(0, MAX_FEED_ITEMS), [items]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [lastReaction, setLastReaction] = useState<{
     title: string;
@@ -32,16 +34,16 @@ export default function App() {
     setCurrentIndex(0);
     setLastReaction(null);
     setReactionError("");
-  }, [items]);
+  }, [cappedItems]);
 
   if (error) return <div className="app-status">エラー: {error}</div>;
   if (isLoading) return <div className="app-status">読み込み中...</div>;
 
-  const remainingItems = items.slice(currentIndex);
+  const remainingItems = cappedItems.slice(currentIndex);
   const visibleStack = remainingItems.slice(0, MAX_VISIBLE_STACK);
 
   const handleRate = async (reaction: Reaction) => {
-    const ratedItem = items[currentIndex];
+    const ratedItem = cappedItems[currentIndex];
     if (!ratedItem || isSubmittingReaction) return;
 
     setReactionError("");
@@ -59,7 +61,7 @@ export default function App() {
       if (!response.ok) throw new Error(`API error: ${response.status}`);
 
       setLastReaction({ title: ratedItem.title, reaction });
-      setCurrentIndex((prevIndex) => Math.min(prevIndex + 1, items.length));
+      setCurrentIndex((prevIndex) => Math.min(prevIndex + 1, cappedItems.length));
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "failed";
       setReactionError(message);
