@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+﻿import { useCallback, useEffect, useState } from "react";
+
+import { getJson } from "../utils/apiClient";
 import type { NewsItem } from "../types/news";
 
 const DEFAULT_NEWS_ENDPOINT = "/api/news";
@@ -10,31 +12,37 @@ export function useNewsFeed(endpoint?: string) {
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchNews = useCallback(async () => {
-    setIsLoading(true);
-    setError("");
+  const fetchNews = useCallback(
+    async (signal?: AbortSignal) => {
+      setIsLoading(true);
+      setError("");
 
-    try {
-      const response = await fetch(targetEndpoint);
-      if (!response.ok) throw new Error(`API error: ${response.status}`);
-      const data: NewsItem[] = await response.json();
-      setItems(data);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "failed";
-      setError(message);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [targetEndpoint]);
+      try {
+        const data = await getJson<NewsItem[]>(targetEndpoint, { signal });
+        setItems(data);
+      } catch (err: unknown) {
+        if (err instanceof DOMException && err.name === "AbortError") {
+          return;
+        }
+        const message = err instanceof Error ? err.message : "failed";
+        setError(message);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [targetEndpoint]
+  );
 
   useEffect(() => {
-    fetchNews();
+    const controller = new AbortController();
+    fetchNews(controller.signal);
+    return () => controller.abort();
   }, [fetchNews]);
 
   return {
     items,
     error,
     isLoading,
-    refresh: fetchNews,
+    refresh: () => fetchNews(),
   } as const;
 }

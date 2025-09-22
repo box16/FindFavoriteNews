@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+﻿import type { ReactNode } from "react";
 import { classNames } from "../utils/classNames";
 
 const MAX_CARD_DEPTH = 3;
@@ -22,7 +22,9 @@ export function NewsCard({ depth, isTop = false, children, footer, className }: 
 
   return (
     <article className={cardClassName}>
-      <div className="news-card__body">{children}</div>
+      <div className="news-card__body">
+        <div className="news-card__content">{children}</div>
+      </div>
       {footer ? <div className="news-card__footer">{footer}</div> : null}
     </article>
   );
