@@ -92,11 +92,7 @@ export default function App() {
                   {item.title}
                 </a>
                 <div className="news-card__source">{item.source}</div>
-                <SanitizedHtml
-                  html={item.summary}
-                  className="news-card__summary"
-                  as="p"
-                />
+                <SanitizedHtml html={item.summary} className="news-card__summary" />
               </NewsCard>
             ))}
           </div>
