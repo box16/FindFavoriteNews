@@ -1,48 +1,156 @@
-﻿import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { getJson } from "../utils/apiClient";
 import type { NewsItem } from "../types/news";
 
 const DEFAULT_NEWS_ENDPOINT = "/api/news";
+const DEFAULT_CACHE_TIME_MS = 60 * 1000;
 
-export function useNewsFeed(endpoint?: string) {
-  // If you want to switch the URL depending on the environment, register VITE_NEWS_ENDPOINT in the .env file.
-  const targetEndpoint = endpoint ?? import.meta.env.VITE_NEWS_ENDPOINT ?? DEFAULT_NEWS_ENDPOINT;
-  const [items, setItems] = useState<NewsItem[]>([]);
+type CacheEntry = {
+  items: NewsItem[];
+  timestamp: number;
+};
+
+type UseNewsFeedOptions = {
+  autoFetch?: boolean;
+  cacheKey?: string;
+  cacheTimeMs?: number;
+};
+
+type RefreshOptions = {
+  force?: boolean;
+};
+
+const feedCache = new Map<string, CacheEntry>();
+const inflightRequests = new Map<string, Promise<NewsItem[]>>();
+
+export function useNewsFeed(endpoint?: string, options?: UseNewsFeedOptions) {
+  const targetEndpoint = useMemo(() => endpoint ?? import.meta.env.VITE_NEWS_ENDPOINT ?? DEFAULT_NEWS_ENDPOINT, [endpoint]);
+  const autoFetch = options?.autoFetch ?? true;
+  const cacheKey = options?.cacheKey ?? targetEndpoint;
+  const cacheTimeMs = options?.cacheTimeMs ?? DEFAULT_CACHE_TIME_MS;
+
+  const cachedEntry = feedCache.get(cacheKey);
+
+  const [items, setItems] = useState<NewsItem[]>(cachedEntry?.items ?? []);
   const [error, setError] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(autoFetch && !cachedEntry);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [hasFetched, setHasFetched] = useState(Boolean(cachedEntry));
 
-  const fetchNews = useCallback(
-    async (signal?: AbortSignal) => {
-      setIsLoading(true);
+  const isActiveRef = useRef(true);
+
+  useEffect(() => {
+    isActiveRef.current = true;
+    return () => {
+      isActiveRef.current = false;
+    };
+  }, [cacheKey]);
+
+  useEffect(() => {
+    const newCache = feedCache.get(cacheKey);
+    if (newCache) {
+      setItems(newCache.items);
+      setHasFetched(true);
+      setIsLoading(false);
+    } else {
+      setItems([]);
+      setHasFetched(false);
+      setIsLoading(autoFetch);
+    }
+    setError("");
+  }, [cacheKey, autoFetch]);
+
+  const performFetch = useCallback(
+    async (opts?: RefreshOptions) => {
+      const force = opts?.force ?? false;
+      const now = Date.now();
+      const cached = feedCache.get(cacheKey);
+      const isCacheValid = cached ? now - cached.timestamp <= cacheTimeMs : false;
+
+      if (!force && cached && isCacheValid) {
+        if (!hasFetched && isActiveRef.current) {
+          setItems(cached.items);
+          setHasFetched(true);
+          setIsLoading(false);
+        }
+        return cached.items;
+      }
+
+      if (hasFetched) {
+        setIsRefreshing(true);
+      } else {
+        setIsLoading(true);
+      }
       setError("");
 
+      const existingRequest = inflightRequests.get(cacheKey);
+      const requestPromise = existingRequest
+        ?? getJson<NewsItem[]>(targetEndpoint).then((data) => {
+          feedCache.set(cacheKey, { items: data, timestamp: Date.now() });
+          return data;
+        });
+
+      if (!existingRequest) {
+        inflightRequests.set(cacheKey, requestPromise);
+      }
+
       try {
-        const data = await getJson<NewsItem[]>(targetEndpoint, { signal });
-        setItems(data);
-      } catch (err: unknown) {
-        if (err instanceof DOMException && err.name === "AbortError") {
-          return;
+        const data = await requestPromise;
+        if (!isActiveRef.current) {
+          return data;
         }
-        const message = err instanceof Error ? err.message : "failed";
-        setError(message);
+        setItems(data);
+        setError("");
+        setHasFetched(true);
+        return data;
+      } catch (err: unknown) {
+        if (!isActiveRef.current) {
+          throw err;
+        }
+
+        if (!(err instanceof DOMException && err.name === "AbortError")) {
+          const message = err instanceof Error ? err.message : "failed";
+          setError(message);
+        }
+        throw err;
       } finally {
-        setIsLoading(false);
+        if (!existingRequest) {
+          inflightRequests.delete(cacheKey);
+        }
+        if (isActiveRef.current) {
+          setIsLoading(false);
+          setIsRefreshing(false);
+        }
       }
     },
-    [targetEndpoint]
+    [cacheKey, cacheTimeMs, hasFetched, targetEndpoint]
   );
 
   useEffect(() => {
-    const controller = new AbortController();
-    fetchNews(controller.signal);
-    return () => controller.abort();
-  }, [fetchNews]);
+    if (!autoFetch) {
+      return;
+    }
+    void performFetch();
+  }, [autoFetch, performFetch]);
+
+  const refresh = useCallback(
+    async (opts?: RefreshOptions) => {
+      try {
+        return await performFetch(opts);
+      } catch {
+        return [];
+      }
+    },
+    [performFetch]
+  );
 
   return {
     items,
     error,
     isLoading,
-    refresh: () => fetchNews(),
+    isRefreshing,
+    hasFetched,
+    refresh,
   } as const;
 }

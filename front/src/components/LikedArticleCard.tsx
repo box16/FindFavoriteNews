@@ -1,4 +1,5 @@
 import type { NewsItem } from "../types/news";
+import { NewsCard } from "./NewsCard";
 import { SanitizedHtml } from "./SanitizedHtml";
 
 type LikedArticleCardProps = {
@@ -7,19 +8,17 @@ type LikedArticleCardProps = {
 
 export function LikedArticleCard({ item }: LikedArticleCardProps) {
   return (
-    <article className="liked-card">
-      {item.source ? <div className="liked-card__source">{item.source}</div> : null}
-      <div className="liked-card__body">
-        <a
-          href={item.link}
-          target="_blank"
-          rel="noreferrer"
-          className="liked-card__title"
-        >
-          {item.title}
-        </a>
-        <SanitizedHtml html={item.summary} className="liked-card__summary" />
-      </div>
-    </article>
+    <NewsCard variant="tile" className="liked-card">
+      {item.source ? <div className="news-card__source">{item.source}</div> : null}
+      <a
+        href={item.link}
+        target="_blank"
+        rel="noreferrer"
+        className="news-card__title"
+      >
+        {item.title}
+      </a>
+      <SanitizedHtml html={item.summary} className="news-card__summary" />
+    </NewsCard>
   );
 }

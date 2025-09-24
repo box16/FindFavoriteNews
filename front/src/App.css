@@ -32,6 +32,29 @@
   color: #6b7280;
 }
 
+.app-status__actions {
+  margin-top: 1.25rem;
+}
+
+.app-status__button {
+  border: 1px solid #1f2937;
+  background-color: #1f2937;
+  color: #f9fafb;
+  border-radius: 9999px;
+  padding: 0.5rem 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.app-status__button:hover {
+  background-color: #111827;
+}
+
+.app-status__button:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
 .news-stack {
   position: relative;
   width: 100%;
@@ -40,20 +63,54 @@
 }
 
 .news-card {
-  position: absolute;
-  inset: 0;
   border-radius: 1rem;
   background-color: #fff;
   border: 1px solid #e5e7eb;
   box-shadow: 0 20px 45px rgba(15, 23, 42, 0.12);
-  padding: 1.8rem;
   display: flex;
   flex-direction: column;
-  transform-origin: center top;
-  transition: transform 0.25s ease, opacity 0.25s ease, box-shadow 0.25s ease;
   overflow: hidden;
   min-height: 0;
+}
+
+.news-card--stack {
+  position: absolute;
+  inset: 0;
+  padding: 1.8rem;
+  transform-origin: center top;
+  transition: transform 0.25s ease, opacity 0.25s ease, box-shadow 0.25s ease;
   height: 100%;
+}
+
+.news-card--stack.news-card--depth-0 {
+  transform: translateY(0) scale(1);
+  z-index: 4;
+}
+
+.news-card--stack.news-card--depth-1 {
+  transform: translateY(16px) scale(0.96);
+  z-index: 3;
+}
+
+.news-card--stack.news-card--depth-2 {
+  transform: translateY(32px) scale(0.92);
+  z-index: 2;
+}
+
+.news-card--stack.news-card--depth-3 {
+  transform: translateY(48px) scale(0.88);
+  z-index: 1;
+}
+
+.news-card--top {
+  box-shadow: 0 30px 60px rgba(15, 23, 42, 0.16);
+}
+
+.news-card--tile {
+  position: relative;
+  padding: 1.25rem;
+  height: 18rem;
+  max-height: 18rem;
 }
 
 .news-card__body {
@@ -74,28 +131,9 @@
   padding-right: 0.65rem;
 }
 
-.news-card--depth-0 {
-  transform: translateY(0) scale(1);
-  z-index: 4;
-}
-
-.news-card--depth-1 {
-  transform: translateY(16px) scale(0.96);
-  z-index: 3;
-}
-
-.news-card--depth-2 {
-  transform: translateY(32px) scale(0.92);
-  z-index: 2;
-}
-
-.news-card--depth-3 {
-  transform: translateY(48px) scale(0.88);
-  z-index: 1;
-}
-
-.news-card--top {
-  box-shadow: 0 30px 60px rgba(15, 23, 42, 0.16);
+.news-card--tile .news-card__content {
+  gap: 0.75rem;
+  padding-right: 0.5rem;
 }
 
 .news-card__title {
@@ -104,6 +142,11 @@
   color: #111827;
   text-decoration: none;
   line-height: 1.35;
+}
+
+.news-card--tile .news-card__title {
+  font-size: 1.3rem;
+  line-height: 1.4;
 }
 
 .news-card__title:hover,
@@ -120,9 +163,19 @@
   color: #6b7280;
 }
 
+.news-card--tile .news-card__source {
+  font-size: 0.75rem;
+  margin-top: 0;
+}
+
 .news-card__summary {
   line-height: 1.68;
   color: #374151;
+}
+
+.news-card--tile .news-card__summary {
+  line-height: 1.6;
+  overflow-y: auto;
 }
 
 .news-card__summary img,
@@ -155,6 +208,10 @@
   text-align: center;
   font-size: 0.95rem;
   color: #6b7280;
+}
+
+.card-actions__status--error {
+  color: #b91c1c;
 }
 
 .card-button {
@@ -242,71 +299,13 @@
 }
 
 .liked-card {
-  border-radius: 1rem;
-  border: 1px solid #e5e7eb;
-  background-color: #fff;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.1);
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-  min-height: 0;
   height: 18rem;
   max-height: 18rem;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.1);
 }
 
-.liked-card__source {
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #6b7280;
-}
-
-.liked-card__body {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  gap: 0.5rem;
-}
-
-.liked-card__title {
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: #111827;
-  text-decoration: none;
-  line-height: 1.4;
-}
-
-.liked-card__title:hover,
-.liked-card__title:focus {
-  color: #2563eb;
-  outline: none;
-}
-
-.liked-card__summary {
-  color: #374151;
-  line-height: 1.6;
-  overflow-y: auto;
-  padding-right: 0.5rem;
-}
-
-.liked-card__summary img,
-.liked-card__summary video,
-.liked-card__summary iframe {
-  max-width: 100%;
-  height: auto;
-  display: block;
-}
-
-.liked-card__summary table {
-  max-width: 100%;
-  display: block;
-  overflow-x: auto;
-}
-
-.card-actions__status--error {
-  color: #b91c1c;
+.liked-card .news-card__content {
+  gap: 0.8rem;
 }
 
 @media (min-width: 640px) {
