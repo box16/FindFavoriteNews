@@ -1,22 +1,33 @@
-﻿import type { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { classNames } from "../utils/classNames";
 
 const MAX_CARD_DEPTH = 3;
 
+type NewsCardVariant = "stack" | "tile";
+
 type NewsCardProps = {
-  depth: number;
+  depth?: number;
   isTop?: boolean;
   children: ReactNode;
   footer?: ReactNode;
   className?: string;
+  variant?: NewsCardVariant;
 };
 
-export function NewsCard({ depth, isTop = false, children, footer, className }: NewsCardProps) {
+export function NewsCard({
+  depth = 0,
+  isTop = false,
+  children,
+  footer,
+  className,
+  variant = "stack",
+}: NewsCardProps) {
   const clampedDepth = Math.min(depth, MAX_CARD_DEPTH);
   const cardClassName = classNames(
     "news-card",
-    `news-card--depth-${clampedDepth}`,
-    isTop && "news-card--top",
+    variant === "stack" ? "news-card--stack" : "news-card--tile",
+    variant === "stack" && `news-card--depth-${clampedDepth}`,
+    variant === "stack" && isTop && "news-card--top",
     className
   );
 

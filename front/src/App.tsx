@@ -1,108 +1,65 @@
-﻿import "./App.css";
-import { useEffect, useMemo, useState } from "react";
+import "./App.css";
+import { useCallback, useState } from "react";
 
-import { REACTIONS, reactionByKey, reactionLabelMap, type ReactionKey } from "./constants/reactions";
-import { NewsCard } from "./components/NewsCard";
-import { SanitizedHtml } from "./components/SanitizedHtml";
-import { useArticleReaction } from "./hooks/useArticleReaction";
-import { useNewsFeed } from "./hooks/useNewsFeed";
+import { HomeTab } from "./features/home/HomeTab";
+import { LikesTab } from "./features/likes/LikesTab";
 
-const MAX_VISIBLE_STACK = 4;
-const MAX_STACK_DEPTH = MAX_VISIBLE_STACK - 1;
-const MAX_FEED_ITEMS = 30;
+type TabKey = "home" | "likes";
+
+const TABS: Array<{ key: TabKey; label: string }> = [
+  { key: "home", label: "Home" },
+  { key: "likes", label: "Likes" },
+];
 
 export default function App() {
-  const { items, error, isLoading } = useNewsFeed();
-  const cappedItems = useMemo(() => items.slice(0, MAX_FEED_ITEMS), [items]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [lastReaction, setLastReaction] = useState<{
-    title: string;
-    reaction: ReactionKey;
-  } | null>(null);
+  const [activeTab, setActiveTab] = useState<TabKey>("home");
+  const [likesEnabled, setLikesEnabled] = useState(false);
+  const [likesReloadToken, setLikesReloadToken] = useState(0);
 
-  const { submitReaction, isSubmitting, error: reactionError } = useArticleReaction();
+  const handleTabChange = useCallback((tab: TabKey) => {
+    setActiveTab(tab);
+    if (tab === "likes") {
+      setLikesEnabled(true);
+    }
+  }, []);
 
-  useEffect(() => {
-    setCurrentIndex(0);
-    setLastReaction(null);
-  }, [cappedItems]);
+  const handleReactionComplete = useCallback((value: number) => {
+    if (value === 1) {
+      setLikesReloadToken((token) => token + 1);
+    }
+  }, []);
 
-  if (error) return <div className="app-status">エラー: {error}</div>;
-  if (isLoading) return <div className="app-status">読み込み中...</div>;
-
-  const remainingItems = cappedItems.slice(currentIndex);
-  const visibleStack = remainingItems.slice(0, MAX_VISIBLE_STACK);
-
-  const handleRate = async (reactionKey: ReactionKey) => {
-    const ratedItem = cappedItems[currentIndex];
-    if (!ratedItem || isSubmitting) return;
-
-    const reaction = reactionByKey[reactionKey];
-    const succeeded = await submitReaction(ratedItem.id, reaction.value);
-    if (!succeeded) return;
-
-    setLastReaction({ title: ratedItem.title, reaction: reactionKey });
-    setCurrentIndex((prevIndex) => Math.min(prevIndex + 1, cappedItems.length));
-  };
+  const pageTitle = activeTab === "home" ? "Latest News" : "Liked Articles";
 
   return (
     <div className="app">
-      <h1 className="app__title">最新ニュース</h1>
+      <h1 className="app__title">{pageTitle}</h1>
 
-      {remainingItems.length ? (
-        <>
-          <div className="news-stack">
-            {visibleStack.map((item, stackIndex) => (
-              <NewsCard
-                key={item.id}
-                depth={Math.min(stackIndex, MAX_STACK_DEPTH)}
-                isTop={stackIndex === 0}
-              >
-                <a
-                  href={item.link}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="news-card__title"
-                >
-                  {item.title}
-                </a>
-                <div className="news-card__source">{item.source}</div>
-                <SanitizedHtml html={item.summary} className="news-card__summary" />
-              </NewsCard>
-            ))}
-          </div>
+      <div className="app__body">
+        {activeTab === "home" ? (
+          <HomeTab onReactionComplete={handleReactionComplete} />
+        ) : (
+          <LikesTab
+            isActive={activeTab === "likes"}
+            shouldLoad={likesEnabled}
+            reloadToken={likesReloadToken}
+          />
+        )}
+      </div>
 
-          <div className="card-actions">
-            {REACTIONS.map((reaction) => (
-              <button
-                key={reaction.key}
-                type="button"
-                className={`card-button card-button--${reaction.buttonModifier}`}
-                onClick={() => handleRate(reaction.key)}
-                disabled={isSubmitting}
-              >
-                {reaction.label}
-              </button>
-            ))}
-          </div>
-
-          {reactionError ? (
-            <div className="card-actions__status card-actions__status--error" role="alert">
-              リアクションの送信に失敗しました: {reactionError}
-            </div>
-          ) : null}
-
-          {lastReaction ? (
-            <div className="card-actions__status" aria-live="polite">
-              {lastReaction.title} を {reactionLabelMap[lastReaction.reaction]} しました
-            </div>
-          ) : null}
-        </>
-      ) : (
-        <div className="app-status app-status--inline">
-          すべてのニュースをチェックしました
-        </div>
-      )}
+      <nav className="app-tabs" aria-label="Switch view">
+        {TABS.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            className={`app-tabs__button${activeTab === tab.key ? " app-tabs__button--active" : ""}`}
+            onClick={() => handleTabChange(tab.key)}
+            aria-current={activeTab === tab.key ? "page" : undefined}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }

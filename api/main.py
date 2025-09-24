@@ -10,6 +10,7 @@ from services.news_service import (
     InvalidReactionError,
     SiteNotConfiguredError,
     get_latest_news,
+    get_liked_articles,
     record_reaction,
 )
 
@@ -31,6 +32,14 @@ def get_news():
         raise HTTPException(status_code=502, detail=str(exc)) from exc
     except SettingsError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+@app.get("/articles/likes", response_model=List[NewsItem])
+def get_liked():
+    try:
+        return get_liked_articles()
+    except SettingsError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
 
 
 @app.post("/articles/{article_id}/reaction", status_code=204)
