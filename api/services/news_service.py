@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from random import shuffle
+from urllib.parse import urlparse
 from typing import List, Sequence, Tuple
 
 from clients.rss_client import RSSFetchError, fetch_feed_entries
@@ -11,6 +12,7 @@ from repositories.article_reactions_repository import (
 )
 from repositories.articles_repository import (
     fetch_article_states_by_link,
+    fetch_liked_articles,
     insert_articles,
 )
 from repositories.sites_repository import fetch_random_sites
@@ -21,7 +23,24 @@ from services.url_normalizer import normalize_article_url
 _SITE_SAMPLE_LIMIT = 10
 _PER_SITE_ENTRY_LIMIT = 5
 _MAX_RESPONSE_ITEMS = 30
+_LIKED_ITEMS_LIMIT = 100
 
+
+def _derive_source_from_link(link: str) -> str:
+    """Return a human-friendly source derived from the article link."""
+    try:
+        netloc = urlparse(link).netloc
+    except ValueError:
+        return ""
+
+    if not netloc:
+        return ""
+
+    netloc = netloc.lower()
+    if netloc.startswith("www."):
+        netloc = netloc[4:]
+
+    return netloc
 
 class NewsServiceError(RuntimeError):
     """Base class for news-specific errors."""
@@ -155,6 +174,26 @@ def get_latest_news(
         )
 
     return news_items
+
+
+def get_liked_articles(*, limit: int = _LIKED_ITEMS_LIMIT) -> List[NewsItem]:
+    """Return the most recent liked articles up to ``limit`` items."""
+    limit_param = max(limit, 0)
+    rows = fetch_liked_articles(limit=limit_param or None)
+
+    liked_items: List[NewsItem] = []
+    for article_id, link, title, summary in rows:
+        liked_items.append(
+            NewsItem(
+                id=article_id,
+                title=title,
+                link=link,
+                summary=summary,
+                source=_derive_source_from_link(link),
+            )
+        )
+
+    return liked_items
 
 
 def record_reaction(*, article_id: int, value: int) -> None:

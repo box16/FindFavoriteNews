@@ -1,4 +1,4 @@
-﻿.app {
+.app {
   max-width: 552px;
   margin: 2rem auto 3rem;
   padding: 0 1.2rem;
@@ -11,6 +11,11 @@
   font-weight: 700;
   margin-bottom: 2.5rem;
   text-align: center;
+}
+
+.app__body {
+  min-height: 28rem;
+  margin-bottom: 2.5rem;
 }
 
 .app-status {
@@ -190,6 +195,106 @@
   box-shadow: 0 12px 24px rgba(239, 68, 68, 0.25);
 }
 
+.app-tabs {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1rem;
+  padding-bottom: 0.5rem;
+  margin-top: 2rem;
+}
+
+.app-tabs__button {
+  flex: 1;
+  max-width: 180px;
+  border-radius: 9999px;
+  border: 1px solid #d1d5db;
+  background-color: #f9fafb;
+  color: #4b5563;
+  padding: 0.65rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.app-tabs__button:hover {
+  background-color: #e5e7eb;
+}
+
+.app-tabs__button--active {
+  background-color: #1f2937;
+  border-color: #1f2937;
+  color: #f9fafb;
+}
+
+.app-tabs__button:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.liked-grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.liked-card {
+  border-radius: 1rem;
+  border: 1px solid #e5e7eb;
+  background-color: #fff;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.1);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 0;
+}
+
+.liked-card__source {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.liked-card__title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #111827;
+  text-decoration: none;
+  line-height: 1.4;
+}
+
+.liked-card__title:hover,
+.liked-card__title:focus {
+  color: #2563eb;
+  outline: none;
+}
+
+.liked-card__summary {
+  color: #374151;
+  line-height: 1.6;
+}
+
+.liked-card__summary img,
+.liked-card__summary video,
+.liked-card__summary iframe {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.liked-card__summary table {
+  max-width: 100%;
+  display: block;
+  overflow-x: auto;
+}
+
+.card-actions__status--error {
+  color: #b91c1c;
+}
+
 @media (min-width: 640px) {
   .app {
     max-width: 624px;
@@ -199,8 +304,8 @@
     min-height: 36rem;
     margin-bottom: 4.5rem;
   }
-}
 
-.card-actions__status--error {
-  color: #b91c1c;
+  .liked-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }

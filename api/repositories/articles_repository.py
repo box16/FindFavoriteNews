@@ -1,7 +1,8 @@
 """Article persistence helpers."""
+
 from __future__ import annotations
 
-from typing import Dict, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 from db import get_connection
 
@@ -21,6 +22,17 @@ values (%s, %s, %s, %s)
 returning id
 """
 
+_LIKED_QUERY = """
+select a.id,
+       a.link,
+       a.title,
+       a.summary
+from articles a
+join article_reactions ar on ar.article_id = a.id
+where ar.value = 1
+order by a.created_at desc, a.id desc
+"""
+
 
 def fetch_article_states_by_link(links: Sequence[str]) -> Dict[str, Tuple[int, bool]]:
     """Return a mapping of link -> (article_id, has_reaction)."""
@@ -35,8 +47,34 @@ def fetch_article_states_by_link(links: Sequence[str]) -> Dict[str, Tuple[int, b
     return {row[0]: (row[1], bool(row[2])) for row in rows}
 
 
+def fetch_liked_articles(
+    limit: Optional[int] = None,
+) -> List[Tuple[int, str, str, str]]:
+    """Return liked articles ordered by newest first."""
+    query = _LIKED_QUERY
+    params: Tuple[object, ...] = ()
+    if limit is not None:
+        query += "\nlimit %s"
+        params = (limit,)
+
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+
+    return [
+        (
+            int(row[0]),
+            row[1],
+            row[2],
+            row[3] or "",
+        )
+        for row in rows
+    ]
+
+
 def insert_articles(
-    articles: Sequence[Tuple[str, Optional[str], str, str]]
+    articles: Sequence[Tuple[str, Optional[str], str, str]],
 ) -> Dict[str, int]:
     """Insert new articles and return their IDs keyed by link."""
     if not articles:
