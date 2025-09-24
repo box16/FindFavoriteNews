@@ -65,13 +65,19 @@ def _prepare_entries(
         if normalised_link in seen_links:
             continue
 
+        title = entry.get("title")
+        if not title:
+            continue
+
+        summary = entry.get("description") or entry.get("summary") or ""
+
         seen_links.add(normalised_link)
         prepared.append(
             {
                 "link": normalised_link,
                 "guid": entry.get("id") or entry.get("guid"),
-                "title": entry.get("title", ""),
-                "summary": entry.get("summary") or entry.get("description") or "",
+                "title": title,
+                "summary": summary,
                 "source": site.name,
             }
         )
@@ -117,7 +123,12 @@ def get_latest_news(
     existing_states = fetch_article_states_by_link(links)
 
     fresh_entries = [item for item in prepared if item["link"] not in existing_states]
-    inserted = insert_articles([(item["link"], item["guid"]) for item in fresh_entries])
+    inserted = insert_articles(
+        [
+            (item["link"], item["guid"], item["title"], item["summary"])
+            for item in fresh_entries
+        ]
+    )
 
     news_items: List[NewsItem] = []
     for item in prepared:
