@@ -15,13 +15,22 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<TabKey>("home");
   const [likesEnabled, setLikesEnabled] = useState(false);
   const [likesReloadToken, setLikesReloadToken] = useState(0);
+  const [homeReloadToken, setHomeReloadToken] = useState(0);
 
-  const handleTabChange = useCallback((tab: TabKey) => {
-    setActiveTab(tab);
-    if (tab === "likes") {
-      setLikesEnabled(true);
-    }
-  }, []);
+  const handleTabChange = useCallback(
+    (tab: TabKey) => {
+      if (activeTab === "likes" && tab === "home") {
+        setHomeReloadToken((token) => token + 1);
+      }
+
+      setActiveTab(tab);
+
+      if (tab === "likes") {
+        setLikesEnabled(true);
+      }
+    },
+    [activeTab]
+  );
 
   const handleReactionComplete = useCallback((value: number) => {
     if (value === 1) {
@@ -37,7 +46,10 @@ export default function App() {
 
       <div className="app__body">
         {activeTab === "home" ? (
-          <HomeTab onReactionComplete={handleReactionComplete} />
+          <HomeTab
+            reloadToken={homeReloadToken}
+            onReactionComplete={handleReactionComplete}
+          />
         ) : (
           <LikesTab
             isActive={activeTab === "likes"}
