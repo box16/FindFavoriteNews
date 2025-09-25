@@ -19,18 +19,17 @@ export default function App() {
 
   const handleTabChange = useCallback(
     (tab: TabKey) => {
-      setActiveTab((prevTab) => {
-        if (prevTab === "likes" && tab === "home") {
-          setHomeReloadToken((token) => token + 1);
-        }
-        return tab;
-      });
+      if (activeTab === "likes" && tab === "home") {
+        setHomeReloadToken((token) => token + 1);
+      }
+
+      setActiveTab(tab);
 
       if (tab === "likes") {
         setLikesEnabled(true);
       }
     },
-    [setHomeReloadToken, setLikesEnabled]
+    [activeTab]
   );
 
   const handleReactionComplete = useCallback((value: number) => {

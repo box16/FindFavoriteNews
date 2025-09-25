@@ -64,7 +64,8 @@ export function HomeTab({ onReactionComplete, reloadToken = 0 }: HomeTabProps) {
       emptyMessage="You're all caught up"
       emptyVariant="inline"
       onRetry={() => {
-          }}
+        void refresh({ force: true });
+      }}
     >
       <>
         <div className="news-stack">
