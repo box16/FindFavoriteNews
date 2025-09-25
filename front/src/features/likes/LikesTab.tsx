@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { AsyncBoundary } from "../../components/AsyncBoundary";
 import { LikedArticleCard } from "../../components/LikedArticleCard";
@@ -14,7 +14,7 @@ type LikesTabProps = {
 };
 
 export function LikesTab({ isActive, shouldLoad, reloadToken }: LikesTabProps) {
-  const { items, error, isLoading, isRefreshing, hasFetched, refresh } = useNewsFeed(LIKES_ENDPOINT, {
+  const { items, error, isLoading, isRefreshing, hasFetched, refresh, mutateItems } = useNewsFeed(LIKES_ENDPOINT, {
     autoFetch: false,
     cacheKey: LIKES_ENDPOINT,
     cacheTimeMs: 5 * 60 * 1000,
@@ -29,18 +29,20 @@ export function LikesTab({ isActive, shouldLoad, reloadToken }: LikesTabProps) {
 
   const handleRemove = useCallback(
     async (articleId: number) => {
-      if (isUpdatingReaction) return;
+      if (isUpdatingReaction || removingId !== null) return;
       setRemovingId(articleId);
       try {
         const succeeded = await submitReaction(articleId, 0);
         if (succeeded) {
+          mutateItems((prevItems) => prevItems.filter((item) => item.id !== articleId));
+        } else {
           await refresh({ force: true });
         }
       } finally {
         setRemovingId(null);
       }
     },
-    [isUpdatingReaction, refresh, submitReaction]
+    [isUpdatingReaction, mutateItems, refresh, removingId, submitReaction]
   );
 
   useEffect(() => {
@@ -82,6 +84,7 @@ export function LikesTab({ isActive, shouldLoad, reloadToken }: LikesTabProps) {
               item={item}
               onRemove={handleRemove}
               isRemoving={removingId === item.id}
+              isDisabled={removingId !== null}
             />
           ))}
         </div>

@@ -1,4 +1,4 @@
-﻿import type { NewsItem } from "../types/news";
+import type { NewsItem } from "../types/news";
 import { NewsCard } from "./NewsCard";
 import { SanitizedHtml } from "./SanitizedHtml";
 
@@ -6,6 +6,7 @@ type LikedArticleCardProps = {
   item: NewsItem;
   onRemove: (articleId: number) => void;
   isRemoving?: boolean;
+  isDisabled?: boolean;
 };
 
 function TrashIcon() {
@@ -25,7 +26,7 @@ function TrashIcon() {
   );
 }
 
-export function LikedArticleCard({ item, onRemove, isRemoving = false }: LikedArticleCardProps) {
+export function LikedArticleCard({ item, onRemove, isRemoving = false, isDisabled = false }: LikedArticleCardProps) {
   return (
     <NewsCard variant="tile" className="liked-card">
       <button
@@ -34,9 +35,14 @@ export function LikedArticleCard({ item, onRemove, isRemoving = false }: LikedAr
         aria-label="Remove from likes"
         title="Remove from likes"
         onClick={() => onRemove(item.id)}
-        disabled={isRemoving}
+        disabled={isDisabled || isRemoving}
+        aria-busy={isRemoving}
       >
-        <TrashIcon />
+        {isRemoving ? (
+          <span className="liked-card__remove-spinner" aria-hidden="true" />
+        ) : (
+          <TrashIcon />
+        )}
       </button>
       {item.source ? <div className="news-card__source">{item.source}</div> : null}
       <a
