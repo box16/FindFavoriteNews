@@ -1,7 +1,8 @@
-import { useEffect } from "react";
+﻿import { useCallback, useEffect, useState } from "react";
 
 import { AsyncBoundary } from "../../components/AsyncBoundary";
 import { LikedArticleCard } from "../../components/LikedArticleCard";
+import { useArticleReaction } from "../../hooks/useArticleReaction";
 import { useNewsFeed } from "../../hooks/useNewsFeed";
 
 const LIKES_ENDPOINT = "/api/articles/likes";
@@ -18,6 +19,29 @@ export function LikesTab({ isActive, shouldLoad, reloadToken }: LikesTabProps) {
     cacheKey: LIKES_ENDPOINT,
     cacheTimeMs: 5 * 60 * 1000,
   });
+
+  const {
+    submitReaction,
+    isSubmitting: isUpdatingReaction,
+    error: reactionError,
+  } = useArticleReaction();
+  const [removingId, setRemovingId] = useState<number | null>(null);
+
+  const handleRemove = useCallback(
+    async (articleId: number) => {
+      if (isUpdatingReaction) return;
+      setRemovingId(articleId);
+      try {
+        const succeeded = await submitReaction(articleId, 0);
+        if (succeeded) {
+          await refresh({ force: true });
+        }
+      } finally {
+        setRemovingId(null);
+      }
+    },
+    [isUpdatingReaction, refresh, submitReaction]
+  );
 
   useEffect(() => {
     if (!shouldLoad || !isActive) return;
@@ -45,11 +69,23 @@ export function LikesTab({ isActive, shouldLoad, reloadToken }: LikesTabProps) {
         void refresh({ force: true });
       }}
     >
-      <div className="liked-grid">
-        {items.map((item) => (
-          <LikedArticleCard key={item.id} item={item} />
-        ))}
-      </div>
+      <>
+        {reactionError ? (
+          <div className="card-actions__status card-actions__status--error" role="alert">
+            Failed to update reaction: {reactionError}
+          </div>
+        ) : null}
+        <div className="liked-grid">
+          {items.map((item) => (
+            <LikedArticleCard
+              key={item.id}
+              item={item}
+              onRemove={handleRemove}
+              isRemoving={removingId === item.id}
+            />
+          ))}
+        </div>
+      </>
     </AsyncBoundary>
   );
 }
