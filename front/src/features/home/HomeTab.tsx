@@ -13,9 +13,10 @@ const MAX_FEED_ITEMS = 30;
 
 type HomeTabProps = {
   onReactionComplete?: (value: number) => void;
+  reloadToken?: number;
 };
 
-export function HomeTab({ onReactionComplete }: HomeTabProps) {
+export function HomeTab({ onReactionComplete, reloadToken = 0 }: HomeTabProps) {
   const { items, error, isLoading, refresh } = useNewsFeed();
   const cappedItems = useMemo(() => items.slice(0, MAX_FEED_ITEMS), [items]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -30,6 +31,13 @@ export function HomeTab({ onReactionComplete }: HomeTabProps) {
     setCurrentIndex(0);
     setLastReaction(null);
   }, [cappedItems]);
+
+  useEffect(() => {
+    if (!reloadToken) {
+      return;
+    }
+    void refresh({ force: true });
+  }, [reloadToken, refresh]);
 
   const remainingItems = cappedItems.slice(currentIndex);
   const visibleStack = remainingItems.slice(0, MAX_VISIBLE_STACK);
@@ -56,8 +64,7 @@ export function HomeTab({ onReactionComplete }: HomeTabProps) {
       emptyMessage="You're all caught up"
       emptyVariant="inline"
       onRetry={() => {
-        void refresh({ force: true });
-      }}
+          }}
     >
       <>
         <div className="news-stack">
