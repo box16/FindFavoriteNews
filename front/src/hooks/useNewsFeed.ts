@@ -145,6 +145,19 @@ export function useNewsFeed(endpoint?: string, options?: UseNewsFeedOptions) {
     [performFetch]
   );
 
+  const mutateItems = useCallback(
+    (updater: (prevItems: NewsItem[]) => NewsItem[]) => {
+      setItems((prevItems) => {
+        const nextItems = updater(prevItems);
+        feedCache.set(cacheKey, { items: nextItems, timestamp: Date.now() });
+        return nextItems;
+      });
+      setHasFetched(true);
+      setError("");
+    },
+    [cacheKey]
+  );
+
   return {
     items,
     error,
@@ -152,5 +165,6 @@ export function useNewsFeed(endpoint?: string, options?: UseNewsFeedOptions) {
     isRefreshing,
     hasFetched,
     refresh,
+    mutateItems,
   } as const;
 }

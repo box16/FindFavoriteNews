@@ -306,6 +306,66 @@
 
 .liked-card .news-card__content {
   gap: 0.8rem;
+  padding-right: 2.5rem;
+  padding-top: 0.25rem;
+}
+
+.liked-card__remove {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  padding: 0.35rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.liked-card__remove:hover,
+.liked-card__remove:focus {
+  color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.12);
+}
+
+.liked-card__remove:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.35);
+  outline-offset: 2px;
+}
+
+.liked-card__remove:disabled {
+  cursor: not-allowed;
+  color: #d1d5db;
+  background-color: transparent;
+}
+
+.liked-card__remove-icon {
+  width: 1rem;
+  height: 1rem;
+  display: block;
+}
+
+.liked-card__remove-spinner {
+  width: 1rem;
+  height: 1rem;
+  display: block;
+  border-radius: 9999px;
+  border: 2px solid currentColor;
+  border-bottom-color: transparent;
+  animation: liked-card-remove-spin 0.6s linear infinite;
+}
+
+@keyframes liked-card-remove-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (min-width: 640px) {
